@@ -47,6 +47,10 @@ def iniciar_banco():
                 valor REAL NOT NULL,
                 pago INTEGER NOT NULL DEFAULT 1
             );
+            CREATE TABLE IF NOT EXISTS configuracoes (
+                chave TEXT PRIMARY KEY,
+                valor TEXT
+            );
             CREATE TABLE IF NOT EXISTS reservas (
                 evento_id INTEGER NOT NULL REFERENCES eventos(id) ON DELETE CASCADE,
                 item_id INTEGER NOT NULL REFERENCES itens(id),
@@ -58,6 +62,10 @@ def iniciar_banco():
         colunas = [r["name"] for r in con.execute("PRAGMA table_info(eventos)")]
         if "status" not in colunas:
             con.execute("ALTER TABLE eventos ADD COLUMN status TEXT NOT NULL DEFAULT 'Agendado'")
+        if "distancia_km" not in colunas:
+            con.execute("ALTER TABLE eventos ADD COLUMN distancia_km REAL")
+        if "custo_combustivel" not in colunas:
+            con.execute("ALTER TABLE eventos ADD COLUMN custo_combustivel REAL")
         if "valor_recebido" not in colunas:
             con.execute("ALTER TABLE eventos ADD COLUMN valor_recebido REAL NOT NULL DEFAULT 0")
 
@@ -133,7 +141,8 @@ def verificar_estoque(itens_pedidos, data, hora_inicio, hora_fim, ignorar_evento
 
 # ---------- Eventos ----------
 def agendar_evento(cliente, data, hora_inicio, hora_fim, endereco, valor_cobrado,
-                   itens_pedidos, observacoes="", forcar_horario=False):
+                   itens_pedidos, observacoes="", forcar_horario=False,
+                   distancia_km=None, custo_combustivel=None):
     """Tenta agendar. Retorna (ok, mensagens)."""
     if hora_fim <= hora_inicio:
         return False, ["A hora de retirada deve ser depois da hora de entrega."]
@@ -153,9 +162,10 @@ def agendar_evento(cliente, data, hora_inicio, hora_fim, endereco, valor_cobrado
     with conectar() as con:
         cur = con.execute(
             """INSERT INTO eventos (cliente, data, hora_inicio, hora_fim, endereco,
-                                    valor_cobrado, observacoes) VALUES (?,?,?,?,?,?,?)""",
+                                    valor_cobrado, observacoes, distancia_km, custo_combustivel)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
             (cliente.strip(), data, hora_inicio, hora_fim, endereco.strip(),
-             float(valor_cobrado), observacoes.strip()),
+             float(valor_cobrado), observacoes.strip(), distancia_km, custo_combustivel),
         )
         for item_id, qtd in itens_pedidos.items():
             con.execute(
@@ -238,3 +248,16 @@ def resumo_financeiro(data_ini, data_fim):
     pendente = sum(x["valor"] for x in l if x["tipo"] == "Despesa" and not x["pago"])
     return {"receitas": receitas, "despesas": despesas, "pendente": pendente,
             "lucro": receitas - despesas}
+
+
+# ---------- Configurações (chave de rotas, base, consumo...) ----------
+def todas_config():
+    with conectar() as con:
+        return {r["chave"]: r["valor"] for r in con.execute("SELECT chave, valor FROM configuracoes")}
+
+
+def salvar_config(valores: dict):
+    with conectar() as con:
+        for chave, valor in valores.items():
+            con.execute("INSERT INTO configuracoes (chave, valor) VALUES (?, ?) "
+                        "ON CONFLICT(chave) DO UPDATE SET valor=excluded.valor", (chave, str(valor)))

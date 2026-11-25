@@ -8,11 +8,13 @@ import streamlit as st
 from PIL import Image
 
 import db
+import logistica
 
 st.set_page_config(page_title="MeR pegue e monte", page_icon=Image.open(Path(__file__).with_name("logo.png")), layout="wide")
 db.iniciar_banco()
 
-PAGINAS = ["Início", "Agendamentos", "Estoque", "Financeiro"]
+VERSAO = "25/11/2026 · logística de entrega"
+PAGINAS = ["Início", "Agendamentos", "Estoque", "Financeiro", "Configurações"]
 DIAS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
 BADGE = {"Agendado": "blue", "Concluído": "green", "Cancelado": "gray",
          "Pago total": "green", "Pago parcial": "yellow", "Não pago": "gray",
@@ -24,7 +26,7 @@ st.markdown("""
 :root { --azul:#1B8FE0; --azul-claro:#E6F3FD; --linha:#C2185B; --rosa:#F0357F; --rosa-esc:#D6256B; --verde:#3DBE72; --amarelo:#FFC83D;
         --navy:#1C3A7A; --muted:#6B7AA6; --fundo:#FFF9E6; --borda:#EFE2C2; }
 .stApp { background: var(--fundo); }
-.stApp, :is(.stApp, [data-testid="stDialog"]) p, :is(.stApp, [data-testid="stDialog"]) label, :is(.stApp, [data-testid="stDialog"]) input, :is(.stApp, [data-testid="stDialog"]) button, :is(.stApp, [data-testid="stDialog"]) textarea,
+.stApp, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) p, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) label, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) input, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) textarea,
 table.mer { font-family: 'Nunito', 'Segoe UI', sans-serif; color: var(--navy); }
 h1, h2, h3, .marca { font-family: 'Fredoka', 'Nunito', 'Segoe UI', sans-serif !important; color: var(--navy); }
 [data-testid="stSidebar"], [data-testid="stSidebarCollapsedControl"],
@@ -34,38 +36,38 @@ h1, h2, h3, .marca { font-family: 'Fredoka', 'Nunito', 'Segoe UI', sans-serif !i
 /* topo */
 .marca { font-size: 26px; font-weight: 700; }
 .marca .m { color: var(--azul); } .marca .p { color: var(--rosa); }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-nav_"] button { background: transparent !important; border: none !important;
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-nav_"] button { background: transparent !important; border: none !important;
     box-shadow: none !important; border-radius: 0 !important; padding: 8px 4px !important;
     border-bottom: 3px solid transparent !important; min-height: 0; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-nav_"] button p { color: var(--muted); font-weight: 700; font-size: 15px; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-nav_"] button:hover p { color: var(--rosa); }
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-nav_"] button p { color: var(--muted); font-weight: 700; font-size: 15px; }
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-nav_"] button:hover p { color: var(--rosa); }
 .linha-topo { border-bottom: 2px solid var(--borda); margin: 4px 0 22px; }
 
 /* botões e campos */
-:is(.stApp, [data-testid="stDialog"]) button[kind="primary"], :is(.stApp, [data-testid="stDialog"]) button[data-testid="stBaseButton-primary"] {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[kind="primary"], :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[data-testid="stBaseButton-primary"] {
     background: var(--rosa) !important; border: none !important; }
-:is(.stApp, [data-testid="stDialog"]) button[kind="primary"] *, :is(.stApp, [data-testid="stDialog"]) button[data-testid="stBaseButton-primary"] * {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[kind="primary"] *, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[data-testid="stBaseButton-primary"] * {
     color: #fff !important; }
-:is(.stApp, [data-testid="stDialog"]) button[kind="primary"]:hover, :is(.stApp, [data-testid="stDialog"]) button[data-testid="stBaseButton-primary"]:hover {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[kind="primary"]:hover, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[data-testid="stBaseButton-primary"]:hover {
     background: var(--rosa-esc) !important; }
-:is(.stApp, [data-testid="stDialog"]) button[kind="secondary"], :is(.stApp, [data-testid="stDialog"]) button[data-testid="stBaseButton-secondary"] {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[kind="secondary"], :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[data-testid="stBaseButton-secondary"] {
     background: var(--azul-claro); border: 1px solid #BFDDF7; }
-:is(.stApp, [data-testid="stDialog"]) button[kind="secondary"]:hover, :is(.stApp, [data-testid="stDialog"]) button[data-testid="stBaseButton-secondary"]:hover {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[kind="secondary"]:hover, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) button[data-testid="stBaseButton-secondary"]:hover {
     background: #D3EAFB; border-color: var(--azul); }
 /* campos sempre brancos, com texto preto (ignora o tema escuro do navegador) */
-:is(.stApp, [data-testid="stDialog"]) :is([data-testid="stTextInput"], [data-testid="stNumberInput"], [data-testid="stTextArea"],
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) :is([data-testid="stTextInput"], [data-testid="stNumberInput"], [data-testid="stTextArea"],
            [data-testid="stSelectbox"], [data-testid="stDateInput"], [data-testid="stTimeInput"],
            [data-testid="stMultiSelect"]) *:not(label):not([data-testid="stWidgetLabel"]):not([data-testid="stWidgetLabel"] *),
 [data-baseweb="popover"], [data-baseweb="popover"] * {
     background-color: #fff !important; color: #111 !important; -webkit-text-fill-color: #111 !important; }
-:is(.stApp, [data-testid="stDialog"]) :is([data-testid="stTextInput"], [data-testid="stNumberInput"], [data-testid="stTextArea"],
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) :is([data-testid="stTextInput"], [data-testid="stNumberInput"], [data-testid="stTextArea"],
            [data-testid="stSelectbox"], [data-testid="stDateInput"], [data-testid="stTimeInput"]) [data-baseweb] {
     border-color: #D9CBA3 !important; }
-:is(.stApp, [data-testid="stDialog"]) [data-baseweb="input"], :is(.stApp, [data-testid="stDialog"]) [data-baseweb="select"] > div, :is(.stApp, [data-testid="stDialog"]) [data-baseweb="textarea"] {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) [data-baseweb="input"], :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) [data-baseweb="select"] > div, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) [data-baseweb="textarea"] {
     border: 1px solid #D9CBA3 !important; border-radius: 8px !important; }
-:is(.stApp, [data-testid="stDialog"]) input::placeholder, :is(.stApp, [data-testid="stDialog"]) textarea::placeholder { color: #6B7280 !important;
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) input::placeholder, :is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) textarea::placeholder { color: #6B7280 !important;
     -webkit-text-fill-color: #6B7280 !important; opacity: 1; }
-:is(.stApp, [data-testid="stDialog"]) :is([data-testid="stSelectbox"], [data-testid="stDateInput"], [data-testid="stTimeInput"]) svg,
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) :is([data-testid="stSelectbox"], [data-testid="stDateInput"], [data-testid="stTimeInput"]) svg,
 [data-baseweb="popover"] svg { fill: #111 !important; }
 [data-baseweb="popover"] li:hover, [data-baseweb="popover"] [aria-selected="true"] {
     background-color: var(--azul-claro) !important; }
@@ -113,18 +115,54 @@ table.mer .num { text-align: right; white-space: nowrap; }
               text-align: center; color: #1C3A7A; }
 .cal-cab { text-align: center; color: #6B7AA6; font-weight: 700; font-size: 12px; }
 .cal-data { font-weight: 700; margin-bottom: 2px; color: #1C3A7A; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button {
     min-height: 34px; height: 34px; width: 100%; padding: 0; border-radius: 50%;
     background: transparent !important; border: none !important; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button p {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button p {
     color: #111 !important; font-size: 13px; font-weight: 600; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button:hover { background: #F1F1F1 !important; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button[kind="primary"],
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button[data-testid="stBaseButton-primary"] {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button:hover { background: #F1F1F1 !important; }
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button[kind="primary"],
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button[data-testid="stBaseButton-primary"] {
     background: #F0357F !important; }
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button[kind="primary"] p,
-:is(.stApp, [data-testid="stDialog"]) div[class*="st-key-cal_"] button[data-testid="stBaseButton-primary"] p {
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button[kind="primary"] p,
+:is(.stApp, [data-testid="stDialog"], [data-testid="stPopoverBody"]) div[class*="st-key-cal_"] button[data-testid="stBaseButton-primary"] p {
     color: #fff !important; }
+
+.rotulo-campo { font-size: 14px; color: #1C3A7A; margin-bottom: 4px; }
+[data-testid="stPopoverButton"] { background: #fff !important; border: 1px solid #D9CBA3 !important;
+    border-radius: 8px !important; justify-content: flex-start; min-width: 230px; }
+[data-testid="stPopoverButton"] * { color: #111 !important; }
+[data-testid="stPopoverBody"], [data-testid="stPopoverBody"] > div { background: #fff !important;
+    min-width: 330px; border-radius: 14px; }
+[data-testid="stPopoverBody"] p, [data-testid="stPopoverBody"] label { color: #1C3A7A; }
+
+/* janelas (modais): fundo creme em todas as camadas, texto azul-marinho */
+div[role="dialog"]:not([data-baseweb="popover"]):not([data-baseweb="popover"] *),
+div[role="dialog"]:not([data-baseweb="popover"]):not([data-baseweb="popover"] *) > div,
+div[role="dialog"]:not([data-baseweb="popover"]):not([data-baseweb="popover"] *) > div > div,
+div[role="dialog"]:not([data-baseweb="popover"]):not([data-baseweb="popover"] *) > div > div > div {
+    background-color: #FFF9E6 !important; }
+div[role="dialog"]:not([data-baseweb="popover"]) h1, div[role="dialog"]:not([data-baseweb="popover"]) h2,
+div[role="dialog"]:not([data-baseweb="popover"]) h3, div[role="dialog"]:not([data-baseweb="popover"]) label,
+div[role="dialog"]:not([data-baseweb="popover"]) p { color: #1C3A7A !important; }
+div[role="dialog"]:not([data-baseweb="popover"]) button[aria-label="Close"] svg { fill: #1C3A7A !important; }
+
+/* campos: cantos internos não aparecem por cima do arredondado */
+[data-baseweb="input"], [data-baseweb="select"] > div, [data-baseweb="textarea"] { overflow: hidden; }
+
+/* avisos (sucesso, erro, atenção) */
+[data-testid="stAlert"], [data-testid="stAlert"] > div { background-color: #fff !important;
+    border: 1px solid #EFE2C2 !important; border-radius: 10px !important; }
+[data-testid="stAlert"] * { color: #1C3A7A !important; }
+.mes-titulo { white-space: nowrap; font-size: 16px !important; }
+
+/* formulários abertos na própria página */
+div[data-testid="stVerticalBlockBorderWrapper"] { background: #fff; border: 1px solid #EFE2C2 !important;
+    border-radius: 14px !important; }
+.painel-titulo { font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 600; font-size: 20px; color: #1C3A7A; }
+.versao { margin-top: 32px; color: #9AA5C4; font-size: 11px; text-align: right; }
+.ent-resumo { background: #FFF9E6; border: 1px solid #EFE2C2; border-radius: 12px;
+              padding: 12px 14px; margin: 8px 0; font-size: 14px; line-height: 1.7; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -159,6 +197,7 @@ NUM = set()  # índices de colunas numéricas (alinhadas à direita), definido a
 
 def ir_para(pagina):
     st.session_state["pagina"] = pagina
+    st.session_state["painel"] = None
 
 
 MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
@@ -175,23 +214,18 @@ def _escolher_dia(chave, dia):
     st.session_state[f"{chave}_sel"] = dia
 
 
-def seletor_mes(chave):
-    """Navegação por mês: ‹ novembro de 2026 ›. Retorna (primeiro dia, último dia)."""
-    m = st.session_state.setdefault(chave, date.today().replace(day=1))
-    a, b, c, _ = st.columns([0.7, 2.6, 0.7, 4], vertical_alignment="center")
-    a.button("‹", key=f"{chave}_ant", on_click=_mover_mes, args=(chave, -1), use_container_width=True)
-    b.markdown(f'<div class="mes-titulo">{MESES[m.month - 1].capitalize()} de {m.year}</div>',
-               unsafe_allow_html=True)
-    c.button("›", key=f"{chave}_prox", on_click=_mover_mes, args=(chave, 1), use_container_width=True)
-    return m, m.replace(day=calendar.monthrange(m.year, m.month)[1])
+def _limpar_dia(chave):
+    st.session_state[f"{chave}_sel"] = None
 
 
-def seletor_dia(chave):
-    """Calendário de botões (sem popover). Retorna a data escolhida."""
-    sel = st.session_state.setdefault(f"{chave}_sel", date.today())
-    mes_key = f"{chave}_mes"
-    mes = st.session_state.setdefault(mes_key, sel.replace(day=1))
-    st.markdown(f'<div class="cal-data">Data: {sel:%d/%m/%Y}</div>', unsafe_allow_html=True)
+def seletor_dia(chave, opcional=False):
+    """Calendário de botões. Com opcional=True é possível ficar sem dia escolhido (mês inteiro)."""
+    sel_key, mes_key = f"{chave}_sel", f"{chave}_mes"
+    sel = st.session_state.setdefault(sel_key, None if opcional else date.today())
+    mes = st.session_state.setdefault(mes_key, (sel or date.today()).replace(day=1))
+    texto = f"Dia: {sel:%d/%m/%Y}" if sel else "Mostrando o mês inteiro"
+    st.markdown(f'<div class="cal-data">{texto if opcional else f"Data: {sel:%d/%m/%Y}"}</div>',
+                unsafe_allow_html=True)
     with st.container(key=f"cal_{chave}"):
         a, b, c = st.columns([1, 3, 1], vertical_alignment="center")
         a.button("‹", key=f"{chave}_ant", on_click=_mover_mes, args=(mes_key, -1))
@@ -206,14 +240,36 @@ def seletor_dia(chave):
                     d = date(mes.year, mes.month, dia)
                     col.button(str(dia), key=f"{chave}_{d.isoformat()}", on_click=_escolher_dia,
                                args=(chave, d), type="primary" if d == sel else "secondary")
+    if opcional:
+        st.button("Ver o mês inteiro", key=f"{chave}_limpar", on_click=_limpar_dia, args=(chave,),
+                  use_container_width=True)
     return sel
 
 
-def abrir(chave, dialogo):
-    """Abre uma janela com o calendário começando no dia de hoje."""
-    st.session_state.pop(f"{chave}_sel", None)
-    st.session_state.pop(f"{chave}_mes", None)
-    dialogo()
+def filtro_data(chave):
+    """Botão que abre um calendário. Retorna (data inicial, data final) do filtro."""
+    sel = st.session_state.get(f"{chave}_sel")
+    mes = st.session_state.get(f"{chave}_mes") or date.today().replace(day=1)
+    rotulo = f"{sel:%d/%m/%Y}" if sel else f"{MESES[mes.month - 1].capitalize()} de {mes.year}"
+    st.markdown('<div class="rotulo-campo">Data</div>', unsafe_allow_html=True)
+    with st.popover("📅  " + rotulo):
+        seletor_dia(chave, opcional=True)
+    if sel:
+        return sel, sel
+    return mes, mes.replace(day=calendar.monthrange(mes.year, mes.month)[1])
+
+
+def abrir_painel(nome):
+    """Abre o formulário na própria página, com o calendário começando em hoje."""
+    st.session_state["painel"] = nome
+    st.session_state.pop("ent", None)
+    for chave in ("ev", "desp"):
+        st.session_state.pop(f"{chave}_sel", None)
+        st.session_state.pop(f"{chave}_mes", None)
+
+
+def fechar_painel():
+    st.session_state["painel"] = None
 
 
 def aviso_pendente():
@@ -223,7 +279,6 @@ def aviso_pendente():
 
 
 # ---------------------------------------------------------------- diálogos
-@st.dialog("Novo agendamento", width="large")
 def dialogo_evento():
     itens = db.listar_itens()
     if not itens:
@@ -237,7 +292,28 @@ def dialogo_evento():
         valor = st.number_input("Valor cobrado (R$)", min_value=0.0, step=10.0)
     with dir_:
         data = seletor_dia("ev")
-    endereco = st.text_input("Endereço do evento")
+    endereco = st.text_input("Endereço do evento", help="Rua, número, bairro e cidade.")
+    if st.button("Calcular distância e combustível", key="calc_ent"):
+        try:
+            st.session_state["ent"] = logistica.calcular_entrega(endereco, db.todas_config())
+        except logistica.ErroLogistica as erro:
+            st.session_state["ent"] = {"ok": False, "erro": str(erro)}
+    ent = st.session_state.get("ent")
+    if ent and not ent["ok"]:
+        st.error(ent["erro"])
+    elif ent and ent["endereco"] != endereco:
+        st.caption("O endereço mudou. Calcule de novo para atualizar a distância.")
+        ent = None
+    elif ent:
+        lucro = valor - ent["custo"]
+        cor = "#3DBE72" if lucro >= 0 else "#F0357F"
+        st.markdown(
+            f'<div class="ent-resumo">📍 {escape(ent["rotulo"])}<br>'
+            f'{ent["km_ida"]:.1f} km por trajeto ({ent["minutos_ida"]:.0f} min) · '
+            f'{ent["viagens"]} viagem(ns) de ida e volta = {ent["km_total"]:.1f} km · '
+            f'{ent["litros"]:.1f} L<br>Combustível: <b>{brl(ent["custo"])}</b> · '
+            f'Sobra após combustível: <b style="color:{cor}">{brl(lucro)}</b></div>',
+            unsafe_allow_html=True)
     obs = st.text_input("Observações")
 
     st.markdown("**Itens** (o número ao lado do nome é o que está livre nesse horário)")
@@ -255,14 +331,18 @@ def dialogo_evento():
         if not cliente.strip():
             st.error("Informe o nome do cliente.")
             return
-        ok, msgs = db.agendar_evento(cliente, ds, i_s, f_s, endereco, valor, pedidos, obs, forcar)
+        calculado = ent if ent and ent.get("ok") and ent["endereco"] == endereco else None
+        ok, msgs = db.agendar_evento(
+            cliente, ds, i_s, f_s, endereco, valor, pedidos, obs, forcar,
+            distancia_km=calculado["km_ida"] if calculado else None,
+            custo_combustivel=calculado["custo"] if calculado else None)
         if ok:
+            st.session_state["painel"] = None
             st.session_state["msg"] = ("ok", "Evento agendado.")
             st.rerun()
         st.error("\n\n".join(msgs))
 
 
-@st.dialog("Adicionar item")
 def dialogo_item():
     nome = st.text_input("Nome")
     cat = st.text_input("Categoria")
@@ -278,11 +358,11 @@ def dialogo_item():
         except Exception:
             st.error("Já existe um item com esse nome.")
             return
+        st.session_state["painel"] = None
         st.session_state["msg"] = ("ok", "Item salvo.")
         st.rerun()
 
 
-@st.dialog("Nova despesa")
 def dialogo_despesa():
     esq, dir_ = st.columns(2)
     with esq:
@@ -297,21 +377,35 @@ def dialogo_despesa():
             st.error("Informe a descrição e um valor maior que zero.")
             return
         db.adicionar_despesa(data.isoformat(), cat, desc, valor, pago)
+        st.session_state["painel"] = None
         st.session_state["msg"] = ("ok", "Despesa salva.")
         st.rerun()
+
+
+def mostrar_painel(nome):
+    titulos = {"ev": ("Novo agendamento", dialogo_evento), "item": ("Adicionar item", dialogo_item),
+               "desp": ("Nova despesa", dialogo_despesa)}
+    if st.session_state.get("painel") != nome:
+        return
+    titulo, formulario = titulos[nome]
+    with st.container(border=True):
+        c1, c2 = st.columns([6, 1], vertical_alignment="center")
+        c1.markdown(f'<div class="painel-titulo">{titulo}</div>', unsafe_allow_html=True)
+        c2.button("Fechar", key="fechar_painel", on_click=fechar_painel, use_container_width=True)
+        formulario()
 
 
 # ---------------------------------------------------------------- topo
 st.session_state.setdefault("pagina", "Início")
 CHAVES = {"Início": "inicio", "Agendamentos": "agendamentos", "Estoque": "estoque",
-          "Financeiro": "financeiro"}
+          "Financeiro": "financeiro", "Configurações": "configuracoes"}
 ativa = CHAVES[st.session_state["pagina"]]
 st.markdown(f"<style>.stApp div[class*='st-key-nav_'].st-key-nav_{ativa} button "
             "{ border-bottom: 4px solid #C2185B !important; }"
             f".stApp div[class*='st-key-nav_'].st-key-nav_{ativa} button p "
             "{ color: #1C3A7A !important; font-weight: 800 !important; }"
             "</style>", unsafe_allow_html=True)
-cols_topo = st.columns([3.2, 1, 1.5, 1, 1.3], vertical_alignment="center")
+cols_topo = st.columns([2.6, 1, 1.5, 1, 1.3, 1.6], vertical_alignment="center")
 cols_topo[0].markdown('<div class="marca"><span><span class="m">MeR</span> '
                       '<span class="p">pegue e monte</span></span></div>', unsafe_allow_html=True)
 for col, nome in zip(cols_topo[1:], PAGINAS):
@@ -326,9 +420,9 @@ aviso_pendente()
 if pagina == "Início":
     st.title("Início")
     a, b, _ = st.columns([1, 1, 3])
-    if a.button("Novo agendamento", type="primary", use_container_width=True):
-        abrir("ev", dialogo_evento)
+    a.button("Novo agendamento", type="primary", use_container_width=True, on_click=abrir_painel, args=("ev",))
     b.button("Ver estoque", use_container_width=True, on_click=ir_para, args=("Estoque",))
+    mostrar_painel("ev")
 
     st.subheader("Próximos agendamentos")
     prox = [e for e in db.eventos_no_periodo(hoje.isoformat(), (hoje + timedelta(days=60)).isoformat())
@@ -357,29 +451,34 @@ if pagina == "Início":
 # ---------------------------------------------------------------- Agendamentos
 elif pagina == "Agendamentos":
     st.title("Agendamentos")
-    if st.button("Novo agendamento", type="primary"):
-        abrir("ev", dialogo_evento)
+    st.button("Novo agendamento", type="primary", on_click=abrir_painel, args=("ev",))
+    mostrar_painel("ev")
 
     f1, f2 = st.columns([3, 1])
     with f1:
-        ini, fim = seletor_mes("mes_ag")
+        ini, fim = filtro_data("ag")
     filtro = f2.selectbox("Status", ["Todos"] + db.STATUS_EVENTO)
     eventos = [e for e in db.eventos_no_periodo(ini.isoformat(), fim.isoformat())
                if filtro == "Todos" or e["status"] == filtro]
 
-    NUM = {6, 7}
+    NUM = {6, 7, 8, 9}
     linhas = []
     for e in eventos:
         d = date.fromisoformat(e["data"])
         itens_txt = ", ".join(f"{i['quantidade']}× {escape(i['nome'])}" for i in e["itens"])
+        custo = e.get("custo_combustivel")
+        comb_txt = "—" if custo is None else (
+            f"{brl(custo)}<div class='sub'>{e['distancia_km']:.1f} km por trajeto</div>")
+        lucro_txt = "—" if custo is None else brl(e["valor_cobrado"] - custo)
         linhas.append([
             e["id"], badge(e["status"]), f"{DIAS[d.weekday()]} {d:%d/%m/%Y}",
             f"{e['hora_inicio']}–{e['hora_fim']}",
             f"<b>{escape(e['cliente'])}</b><div class='sub'>{escape(e['endereco'] or '')}</div>",
-            itens_txt, brl(e["valor_cobrado"]), brl(e["valor_recebido"]),
+            itens_txt, brl(e["valor_cobrado"]), comb_txt, lucro_txt, brl(e["valor_recebido"]),
             badge(db.status_pagamento(e["valor_cobrado"], e["valor_recebido"]))])
     tabela(["ID", "Status", "Data", "Horário", "Cliente", "Itens",
-            ("Valor", "num"), ("Recebido", "num"), "Pagamento"], linhas,
+            ("Valor", "num"), ("Combustível", "num"), ("Sobra", "num"), ("Recebido", "num"),
+            "Pagamento"], linhas,
            "Nenhum agendamento neste período.")
 
     if eventos:
@@ -393,6 +492,7 @@ elif pagina == "Agendamentos":
                                        value=float(ev["valor_recebido"]), key=f"rc_{ev['id']}")
             if st.button("Salvar alterações", type="primary"):
                 db.atualizar_evento(ev["id"], novo_status, recebido)
+                st.session_state["painel"] = None
                 st.session_state["msg"] = ("ok", "Agendamento atualizado.")
                 st.rerun()
             st.caption("Eventos cancelados liberam os itens reservados.")
@@ -400,8 +500,8 @@ elif pagina == "Agendamentos":
 # ---------------------------------------------------------------- Estoque
 elif pagina == "Estoque":
     st.title("Estoque")
-    if st.button("Adicionar item", type="primary"):
-        dialogo_item()
+    st.button("Adicionar item", type="primary", on_click=abrir_painel, args=("item",))
+    mostrar_painel("item")
 
     itens = db.listar_itens()
     busca = st.text_input("Buscar item", placeholder="Nome ou categoria")
@@ -424,16 +524,17 @@ elif pagina == "Estoque":
                                    value=esc["quantidade_total"], key=f"nova_{esc['id']}")
             if st.button("Atualizar quantidade", type="primary"):
                 db.atualizar_quantidade(esc["id"], nova)
+                st.session_state["painel"] = None
                 st.session_state["msg"] = ("ok", "Quantidade atualizada.")
                 st.rerun()
 
 # ---------------------------------------------------------------- Financeiro
-else:
+elif pagina == "Financeiro":
     st.title("Financeiro")
-    if st.button("Nova despesa", type="primary"):
-        abrir("desp", dialogo_despesa)
+    st.button("Nova despesa", type="primary", on_click=abrir_painel, args=("desp",))
+    mostrar_painel("desp")
 
-    ini, fim = seletor_mes("mes_fin")
+    ini, fim = filtro_data("fin")
     r = db.resumo_financeiro(ini.isoformat(), fim.isoformat())
 
     m1, m2, m3 = st.columns(3)
@@ -461,5 +562,53 @@ else:
                              format_func=lambda x: f"{br_data(x['data'])} · {x['descricao']} · {brl(x['valor'])}")
             if st.button("Excluir despesa"):
                 db.excluir_despesa(d["id"])
+                st.session_state["painel"] = None
                 st.session_state["msg"] = ("ok", "Despesa excluída.")
                 st.rerun()
+
+# ---------------------------------------------------------------- Configurações
+else:
+    st.title("Configurações")
+    st.caption("Usadas para calcular a distância e o custo de combustível de cada entrega.")
+    cfg = db.todas_config()
+    with st.container(border=True):
+        a, b = st.columns(2)
+        base = a.text_input("Endereço da base (de onde saem as entregas)",
+                            value=cfg.get("base_endereco", ""), help="Rua, número, bairro e cidade.")
+        consumo = b.number_input("Consumo do veículo (km por litro)", min_value=1.0, step=0.5,
+                                 value=float(cfg.get("consumo_kml", 10)))
+        preco = a.number_input("Preço do litro (R$)", min_value=0.0, step=0.1,
+                               value=float(cfg.get("preco_litro", 6.0)))
+        viagens = b.number_input("Viagens de ida e volta por evento", min_value=1, max_value=4, step=1,
+                                 value=int(float(cfg.get("viagens", 2))),
+                                 help="2 = uma viagem para entregar e outra para retirar.")
+        chave = st.text_input("Chave do OpenRouteService", type="password",
+                              placeholder="Já configurada. Deixe em branco para manter."
+                              if cfg.get("ors_chave") else "Cole aqui a chave")
+        st.caption("Para obter a chave: crie uma conta gratuita em openrouteservice.org, abra o "
+                   "Dashboard e peça um token do tipo Basic.")
+        if st.button("Salvar configurações", type="primary"):
+            chave_final = chave.strip() or cfg.get("ors_chave", "")
+            novos = {"base_endereco": base.strip(), "consumo_kml": consumo, "preco_litro": preco,
+                     "viagens": viagens, "ors_chave": chave_final}
+            msg = ("ok", "Configurações salvas.")
+            if base.strip() and chave_final and (base.strip() != cfg.get("base_endereco")
+                                                 or not cfg.get("base_lat") or chave.strip()):
+                try:
+                    lat, lon, rotulo = logistica.geocodificar(base, chave_final)
+                    novos.update({"base_lat": lat, "base_lon": lon, "base_rotulo": rotulo})
+                    msg = ("ok", f"Configurações salvas. Base localizada: {rotulo}")
+                except logistica.ErroLogistica as erro:
+                    novos.update({"base_lat": "", "base_lon": "", "base_rotulo": ""})
+                    msg = ("erro", f"Configurações salvas, mas a base não foi localizada: {erro}")
+            db.salvar_config(novos)
+            st.session_state["msg"] = msg
+            st.rerun()
+
+    situacao = []
+    situacao.append("Chave: configurada ✓" if cfg.get("ors_chave") else "Chave: ainda não configurada")
+    situacao.append(f"Base localizada: {escape(cfg['base_rotulo'])}" if cfg.get("base_rotulo")
+                    else "Base: ainda não localizada")
+    st.markdown("<br>".join(situacao), unsafe_allow_html=True)
+
+st.markdown(f'<div class="versao">versão: {VERSAO}</div>', unsafe_allow_html=True)
